@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dashboard_screen.dart';
 import '../services/firebase_auth_service.dart'; // Import service yang baru dibuat
+import 'main_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -49,7 +50,7 @@ class _LoginScreenState extends State<LoginScreen> {
         // Jika sukses, pindah ke Dashboard
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const DashboardScreen()),
+          MaterialPageRoute(builder: (context) => const MainScreen()), // <-- Ubah di sini
         );
       }
     } catch (e) {

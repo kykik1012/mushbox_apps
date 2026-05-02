@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/dashboard_provider.dart';
+import '../widgets/metric_card.dart';
+import '../widgets/device_status_item.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -13,7 +17,7 @@ class DashboardScreen extends StatelessWidget {
         title: const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Dashboard', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+            Text('Dashboard', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 24)),
             Text('Rabu, 29 Apr 2026', style: TextStyle(color: Colors.grey, fontSize: 14)),
           ],
         ),
@@ -24,8 +28,124 @@ class DashboardScreen extends StatelessWidget {
           )
         ],
       ),
-      body: const Center(
-        child: Text('Tampilan Kartu Sensor dan Grafik akan ditaruh di sini'),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // 1. GRID METRIK SENSOR
+            GridView.count(
+              crossAxisCount: 2,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              mainAxisSpacing: 16,
+              crossAxisSpacing: 16,
+              childAspectRatio: 1.1,
+              children: [
+                // Menggunakan Consumer spesifik untuk bagian ini agar tidak render ulang semua
+                Consumer<DashboardProvider>(
+                  builder: (context, prov, child) => MetricCard(
+                    title: 'Kelembaban Tanah', value: prov.kelembabanTanah, unit: '%',
+                    icon: Icons.water_drop_outlined, iconColor: const Color(0xFF163832), trend: '+3%', isTrendPositive: true,
+                  ),
+                ),
+                Consumer<DashboardProvider>(
+                  builder: (context, prov, child) => MetricCard(
+                    title: 'Kelembaban Udara', value: prov.kelembabanUdara, unit: '%',
+                    icon: Icons.air, iconColor: const Color(0xFF8EB69B), trend: '+5%', isTrendPositive: true,
+                  ),
+                ),
+                Consumer<DashboardProvider>(
+                  builder: (context, prov, child) => MetricCard(
+                    title: 'Suhu', value: prov.suhu, unit: '°C',
+                    icon: Icons.thermostat_outlined, iconColor: Colors.orange, trend: '-2°', isTrendPositive: false,
+                  ),
+                ),
+                Consumer<DashboardProvider>(
+                  builder: (context, prov, child) => MetricCard(
+                    title: 'Level Air', value: prov.levelAir, unit: '%',
+                    icon: Icons.waves, iconColor: Colors.blue, trend: '-8%', isTrendPositive: false,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+
+            // 2. GRAFIK (Placeholder sementara sebelum pakai fl_chart)
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Grafik Real-time', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                          Text('Data hari ini', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                        ],
+                      ),
+                      // Tombol Toggle Chart
+                      Consumer<DashboardProvider>(
+                        builder: (context, prov, child) => Row(
+                          children: ['Tanah', 'Udara', 'Suhu'].map((mode) {
+                            bool isActive = prov.selectedChart == mode;
+                            return GestureDetector(
+                              onTap: () => prov.setChartMode(mode),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: isActive ? const Color(0xFF163832) : Colors.grey[100],
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Text(
+                                  mode,
+                                  style: TextStyle(
+                                    color: isActive ? Colors.white : Colors.grey[600],
+                                    fontSize: 12, fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+                                  ),
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  const SizedBox(height: 150, child: Center(child: Text('Tempat grafik fl_chart nantinya'))),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // 3. STATUS PERANGKAT
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Status Perangkat', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  const SizedBox(height: 16),
+                  Consumer<DashboardProvider>(
+                    builder: (context, prov, child) => Column(
+                      children: [
+                        DeviceStatusItem(deviceName: 'Sensor Area A', isOnline: prov.isSensorAOnline, icon: Icons.wifi),
+                        DeviceStatusItem(deviceName: 'Pompa Utama', isOnline: prov.isPompaOnline, icon: Icons.water_drop),
+                        DeviceStatusItem(deviceName: 'Sensor Area B', isOnline: prov.isSensorBOnline, icon: Icons.wifi_off),
+                        DeviceStatusItem(deviceName: 'Kipas Ventilasi', isOnline: prov.isKipasOnline, icon: Icons.mode_fan_off),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

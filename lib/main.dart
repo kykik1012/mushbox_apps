@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart'; // 1. Import Firebase Core
 import 'firebase_options.dart'; // 2. Import pengaturan Firebase
 import 'pages/splash_screen.dart';
+import 'package:provider/provider.dart';
+import 'providers/dashboard_provider.dart';
 
 void main() async { 
   // 4. Wajib dipanggil sebelum inisialisasi Firebase
@@ -14,10 +16,16 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  runApp(
-    DevicePreview(
-      enabled: !kReleaseMode,
-      builder: (context) => const MyApp(), 
+ runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => DashboardProvider()),
+        // Nanti kalau ada AuthProvider, bisa ditambah di sini
+      ],
+      child: DevicePreview(
+        enabled: !kReleaseMode,
+        builder: (context) => const MyApp(), 
+      ),
     ),
   );
 }
