@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "972871195029",
+    "project_id": "api-mushbox",
+    "storage_bucket": "api-mushbox.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:972871195029:android:022300e59964442974fe9c",
+        "android_client_info": {
+          "package_name": "com.example.implementasi_login"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCTXXod1LzkL3muZWLNlehszE4W2Vm6Jek"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:972871195029:android:f0ebf47a5c072df974fe9c",
+        "android_client_info": {
+          "package_name": "com.example.mushbox_apps"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCTXXod1LzkL3muZWLNlehszE4W2Vm6Jek"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
