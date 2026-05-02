@@ -1,12 +1,21 @@
 import 'package:device_preview/device_preview.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart'; // 1. Import Firebase Core
+import 'firebase_options.dart'; // 2. Import pengaturan Firebase
 import 'pages/splash_screen.dart';
 
-void main() {
+void main() async { 
+  // 4. Wajib dipanggil sebelum inisialisasi Firebase
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // 5. Inisialisasi Firebase (Ini yang mencegah error layar merah di Web)
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
   runApp(
     DevicePreview(
-      // Aktifkan preview hanya jika bukan dalam mode release (hanya saat debug)
       enabled: !kReleaseMode,
       builder: (context) => const MyApp(), 
     ),
