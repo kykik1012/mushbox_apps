@@ -5,6 +5,7 @@ import '../theme/app_colors.dart';
 import 'login_screen.dart'; // Untuk navigasi saat logout
 import '../widgets/profile_menu_item.dart';
 import 'package:image_picker/image_picker.dart';
+import 'keamanan_akun_screen.dart'; // Import layar keamanan akun
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -289,7 +290,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
               icon: Icons.shield_outlined, 
               title: 'Keamanan Akun', 
               subtitle: 'Password & Akun',
-              onTap: () {},
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const KeamananAkunScreen()),
+                );
+              },
             ),
             ProfileMenuItem(
               icon: Icons.notifications_outlined, 
