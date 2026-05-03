@@ -4,6 +4,7 @@ import '../services/supabase_profile_service.dart';
 import '../theme/app_colors.dart';
 import 'login_screen.dart'; // Untuk navigasi saat logout
 import '../widgets/profile_menu_item.dart';
+import 'package:image_picker/image_picker.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -15,11 +16,14 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   final SupabaseProfileService _profileService = SupabaseProfileService();
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  
 
   bool _isLoading = true;
+  bool _isUploadingPhoto = false;
   Map<String, dynamic>? _profileData;
   String? _userEmail;
 
+  final ImagePicker _picker = ImagePicker();
   @override
   void initState() {
     super.initState();
@@ -47,6 +51,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  Future<void> _changeProfilePhoto() async {
+    try {
+      // Buka galeri, kompres kualitas jadi 70% agar upload cepat
+      final XFile? image = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
+      if (image == null) return; // Dibatalkan pengguna
+
+      setState(() => _isUploadingPhoto = true); // Munculkan loading
+
+      // Upload ke Supabase menggunakan service
+      final newUrl = await _profileService.uploadProfileImage(image);
+
+      setState(() {
+        _profileData ??= {}; // Jika _profileData null, buat map kosong
+        _profileData!['foto_url'] = newUrl; // Update url fotonya
+        _isUploadingPhoto = false;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Foto berhasil diperbarui!')));
+      }
+    } catch (e) {
+      setState(() => _isUploadingPhoto = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
       }
     }
   }
@@ -194,10 +226,43 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   Center(
                     child: Column(
                       children: [
-                        const CircleAvatar(
-                          radius: 50,
-                          backgroundColor: Colors.white,
-                          child: Icon(Icons.person, size: 60, color: AppColors.dark1),
+                        GestureDetector(
+                          onTap: _isUploadingPhoto ? null : _changeProfilePhoto,
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              CircleAvatar(
+                                radius: 50,
+                                backgroundColor: Colors.white,
+                                // Tampilkan foto jika ada URL-nya
+                                backgroundImage: _profileData?['foto_url'] != null
+                                    ? NetworkImage(_profileData!['foto_url'])
+                                    : null,
+                                // Tampilkan ikon orang JIKA URL-nya masih kosong
+                                child: _profileData?['foto_url'] == null
+                                    ? const Icon(Icons.person, size: 60, color: AppColors.dark1)
+                                    : null,
+                              ),
+                              
+                              // Indikator loading saat upload
+                              if (_isUploadingPhoto)
+                                const CircularProgressIndicator(color: AppColors.dark1),
+                                
+                              // Ikon kamera kecil di pojok foto
+                              Positioned(
+                                bottom: 0,
+                                right: 0,
+                                child: Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: const BoxDecoration(
+                                    color: Colors.white,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(Icons.camera_alt, size: 16, color: AppColors.dark1),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                         const SizedBox(height: 16),
                         Text(
