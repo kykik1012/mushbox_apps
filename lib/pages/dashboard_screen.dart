@@ -45,25 +45,25 @@ class DashboardScreen extends StatelessWidget {
                 // Menggunakan Consumer spesifik untuk bagian ini agar tidak render ulang semua
                 Consumer<DashboardProvider>(
                   builder: (context, prov, child) => MetricCard(
-                    title: 'Kelembaban Tanah', value: prov.kelembabanTanah, unit: '%',
+                    title: 'Kelembaban Tanah', value: prov.kelembabanTanah.toStringAsFixed(1), unit: '%',
                     icon: Icons.water_drop_outlined, iconColor: const Color(0xFF163832), trend: '+3%', isTrendPositive: true,
                   ),
                 ),
                 Consumer<DashboardProvider>(
                   builder: (context, prov, child) => MetricCard(
-                    title: 'Kelembaban Udara', value: prov.kelembabanUdara, unit: '%',
+                    title: 'Kelembaban Udara', value: prov.kelembabanUdara.toStringAsFixed(1), unit: '%',
                     icon: Icons.air, iconColor: const Color(0xFF8EB69B), trend: '+5%', isTrendPositive: true,
                   ),
                 ),
                 Consumer<DashboardProvider>(
                   builder: (context, prov, child) => MetricCard(
-                    title: 'Suhu', value: prov.suhu, unit: '°C',
+                    title: 'Suhu', value: prov.suhu.toStringAsFixed(1), unit: '°C',
                     icon: Icons.thermostat_outlined, iconColor: Colors.orange, trend: '-2°', isTrendPositive: false,
                   ),
                 ),
                 Consumer<DashboardProvider>(
                   builder: (context, prov, child) => MetricCard(
-                    title: 'Level Air', value: prov.levelAir, unit: '%',
+                    title: 'Level Air', value: prov.levelAir.toString(), unit: '%',
                     icon: Icons.waves, iconColor: Colors.blue, trend: '-8%', isTrendPositive: false,
                   ),
                 ),

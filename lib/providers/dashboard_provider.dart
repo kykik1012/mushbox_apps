@@ -1,60 +1,61 @@
 import 'package:flutter/material.dart';
-import '../services/mqtt_service.dart'; // Import service MQTT yang sudah kita buat
+import '../services/mqtt_service.dart';
 
-class DashboardProvider extends ChangeNotifier {
-  // 1. Instansiasi MqttService
+class DashboardProvider with ChangeNotifier {
   final MqttService _mqttService = MqttService();
 
-  // 2. Data Sensor (Nilai awal sebelum ada data dari IoT)
-  String kelembabanTanah = "72";
-  String kelembabanUdara = "--"; // Pakai strip agar tahu kalau data belum masuk
-  String suhu = "--";
-  String levelAir = "65";
+  // --- DATA SENSOR MQTT ---
+  double suhu = 0.0;
+  double kelembabanUdara = 0.0; // Sudah diubah pakai 'b' menyesuaikan UI
+  double kelembabanTanah = 0.0; // Sudah diubah pakai 'b' menyesuaikan UI
+  int levelAir = 0;
+  bool isConnected = false;
 
-  // 3. State untuk Tab Grafik
-  String selectedChart = 'Tanah';
-
-  // 4. Status Perangkat IoT
-  bool isSensorAOnline = true;
-  bool isPompaOnline = false; // Kita buat default false dulu
+  // --- DATA STATUS DEVICE (Untuk mengatasi error isPompaOnline, isKipasOnline, dll) ---
+  bool isSensorAOnline = false;
   bool isSensorBOnline = false;
-  bool isKipasOnline = true;
+  bool isPompaOnline = false;
+  bool isKipasOnline = false;
 
-  // 5. Constructor: Otomatis dijalankan saat Provider pertama kali dipanggil
-  DashboardProvider() {
-    _initMqtt();
-  }
+  // --- DATA CHART (Untuk mengatasi error selectedChart & setChartMode) ---
+  // Asumsi tipe data chart mode adalah String ('Harian', 'Mingguan', dll)
+  // Ubah tipe data jika ternyata di UI menggunakan int (index)
+  String selectedChart = 'Harian';
 
-  // Fungsi untuk menyambungkan MQTT dan mendengarkan data
-  void _initMqtt() {
-    // Memanggil fungsi connect dari mqtt_service.dart
-    _mqttService.connect((data) {
-      // 'data' ini berisi JSON dari ESP32: {"suhu": 27.0, "kelembapan": 85.0, "relay_status": "Online"}
-      
-      // Update Suhu
-      if (data['suhu'] != null) {
-        // Asumsikan data berupa angka desimal (double), kita ubah ke String dengan 1 angka di belakang koma
-        suhu = (data['suhu'] as num).toStringAsFixed(1); 
-      }
-      
-      // Update Kelembapan Udara
-      if (data['kelembapan'] != null) {
-        kelembabanUdara = (data['kelembapan'] as num).toStringAsFixed(1);
-      }
-
-      // Update Status Relay (Misal kita hubungkan ke status Pompa Utama)
-      if (data['relay_status'] != null) {
-        isPompaOnline = data['relay_status'] == "Online";
-      }
-
-      // TERIAK KE UI AGAR MENGGANTI ANGKA DI LAYAR!
-      notifyListeners(); 
-    });
-  }
-
-  // Fungsi untuk mengubah tab grafik (Tetap dipertahankan)
   void setChartMode(String mode) {
     selectedChart = mode;
     notifyListeners();
+  }
+
+  // --- FUNGSI MQTT ---
+  void initMqtt() {
+    _mqttService.connect(
+      onMessageReceived: (data) {
+        // Sesuaikan nama key (yang di dalam kutip) dengan JSON dari C++
+        suhu =
+            double.tryParse(data['temp'].toString()) ??
+            0.0; // Ubah 'suhu' jadi 'temp'
+        kelembabanUdara =
+            double.tryParse(data['hum'].toString()) ??
+            0.0; // Ubah 'h_udara' jadi 'hum'
+
+        // Catatan: Karena ESP kamu saat ini belum mengirim data tanah dan air,
+        // maka 2 bagian di bawah ini sementara akan tetap bernilai 0.0
+        kelembabanTanah = double.tryParse(data['h_tanah'].toString()) ?? 0.0;
+        levelAir = int.tryParse(data['air'].toString()) ?? 0;
+
+        isConnected = true;
+        isSensorAOnline = true;
+        isSensorBOnline = true;
+
+        notifyListeners(); // Menyuruh UI update angka
+      },
+      onDisconnected: () {
+        isConnected = false;
+        isSensorAOnline = false;
+        isSensorBOnline = false;
+        notifyListeners();
+      },
+    );
   }
 }
