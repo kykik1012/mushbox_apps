@@ -69,7 +69,9 @@ class SupabaseProfileService {
       );
 
       // 4. Dapatkan URL Publik dari gambar yang baru diupload
-      final imageUrl = _supabase.storage.from('profile_pics').getPublicUrl(fileName);
+      // MASA LALU: final imageUrl = _supabase.storage.from('profile_pics').getPublicUrl(fileName);
+      // UBAH MENJADI SEPERTI INI (Samakan nama bucket-nya):
+      final imageUrl = _supabase.storage.from('profile').getPublicUrl(fileName);
 
       // 5. Simpan URL tersebut ke dalam tabel profiles
       await _supabase.from('profiles').upsert({

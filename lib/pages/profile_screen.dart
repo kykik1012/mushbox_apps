@@ -303,12 +303,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               subtitle: 'Suara & Getar pesanan masuk',
               onTap: () {},
             ),
-            ProfileMenuItem(
-              icon: Icons.help_outline, 
-              title: 'Pusat Bantuan', 
-              subtitle: 'FAQ & Hubungi CS',
-              onTap: () {},
-            ),
+            
             
             const SizedBox(height: 8),
             
