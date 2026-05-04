@@ -6,10 +6,10 @@ class DashboardProvider extends ChangeNotifier {
   final MqttService _mqttService = MqttService();
 
   // 2. Data Sensor (Nilai awal sebelum ada data dari IoT)
-  String kelembabanTanah = "72";
+  String kelembabanTanah = "--";
   String kelembabanUdara = "--"; // Pakai strip agar tahu kalau data belum masuk
   String suhu = "--";
-  String levelAir = "65";
+  String levelAir = "--";
 
   // 3. State untuk Tab Grafik
   String selectedChart = 'Tanah';
