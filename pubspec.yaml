@@ -96,3 +96,6 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+# Tambahkan ini di bagian bawah pubspec.yaml
+dependency_overrides:
+  web: ^0.5.1 # Turunkan versinya agar kompatibel dengan SDK lama
