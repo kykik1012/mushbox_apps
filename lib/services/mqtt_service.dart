@@ -1,27 +1,29 @@
 import 'dart:convert';
 import 'package:mqtt_client/mqtt_client.dart';
-// 1. IMPORT DIUBAH KE BROWSER CLIENT
-import 'package:mqtt_client/mqtt_browser_client.dart'; 
+import 'package:mqtt_client/mqtt_server_client.dart'; 
 
 class MqttService {
-  // 2. URL DITAMBAH 'wss://' DI DEPAN DAN '/mqtt' DI BELAKANG
-  final String _server = 'wss://a6da7a9ae5cd4fbcabb35e78fd0f5f4d.s1.eu.hivemq.cloud/mqtt'; 
-  final String _topic = 'mushbox/unij/sensor';
+  final String _server = 'd602c79b764043ceb3efa34e5c0b1abc.s1.eu.hivemq.cloud'; 
+  final String _topic = 'mewing/sensor/data';
   
-  final String _username = 'device_mushbox';
-  final String _password = 'Rahasia123!';
+  final String _username = 'angganyobait';
+  final String _password = '1Sampai8';
 
-  // 3. CLASS DIUBAH KE BROWSER CLIENT
-  late MqttBrowserClient _client;
+  late MqttServerClient _client;
 
   MqttService() {
-    // 4. PORT UNTUK WEB ADALAH 8884
-    _client = MqttBrowserClient.withPort(_server, 'flutter_mushbox_web', 8884);
+    // 1. PERBAIKAN: Buat Client ID selalu unik agar tidak ditolak server jika restart aplikasi
+    String uniqueId = 'flutter_mushbox_${DateTime.now().millisecondsSinceEpoch}';
+    _client = MqttServerClient.withPort(_server, uniqueId, 8883);
   }
 
   Future<void> connect(Function(Map<String, dynamic>) onDataReceived) async {
+    _client.secure = true;
     _client.logging(on: true); 
     _client.keepAlivePeriod = 60;
+    
+    // 2. PERBAIKAN: Wajib untuk HiveMQ Cloud! Paksa gunakan protokol versi 3.1.1
+    _client.setProtocolV311();
     
     final connMess = MqttConnectMessage()
         .authenticateAs(_username, _password)
@@ -29,9 +31,11 @@ class MqttService {
     _client.connectionMessage = connMess;
 
     try {
-      print('Menyambungkan ke HiveMQ Cloud (Via Web)...');
+      print('Menyambungkan ke HiveMQ Cloud (Native Android)...');
       await _client.connect();
-      print('MQTT Tersambung ke Cloud via Web!');
+      
+      // JIKA TULISAN INI MUNCUL DI CONSOLE, BERARTI SUKSES 100%
+      print('MQTT Tersambung ke Cloud!'); 
       
       _client.subscribe(_topic, MqttQos.atMostOnce);
       
