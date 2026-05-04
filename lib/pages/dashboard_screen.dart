@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/dashboard_provider.dart';
 import '../widgets/metric_card.dart';
 import '../widgets/device_status_item.dart';
+import 'package:fl_chart/fl_chart.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -115,8 +116,84 @@ class DashboardScreen extends StatelessWidget {
                       ),
                     ],
                   ),
+                  // --- MULAI DARI SINI: Ganti tulisan "Tempat grafik..." dengan ini ---
                   const SizedBox(height: 16),
-                  const SizedBox(height: 150, child: Center(child: Text('Tempat grafik fl_chart nantinya'))),
+                  Consumer<DashboardProvider>(
+                    builder: (context, prov, child) {
+                      // 1. Siapkan data dan warna berdasarkan tab yang dipilih
+                      List<FlSpot> currentData = [];
+                      Color lineColor = const Color(0xFF163832); // Default Hijau Gelap
+
+                      if (prov.selectedChart == 'Tanah') {
+                        currentData = prov.chartDataTanah;
+                        lineColor = const Color(0xFF163832);
+                      } else if (prov.selectedChart == 'Udara') {
+                        currentData = prov.chartDataUdara;
+                        lineColor = const Color(0xFF8EB69B);
+                      } else if (prov.selectedChart == 'Suhu') {
+                        currentData = prov.chartDataSuhu;
+                        lineColor = Colors.orange;
+                      }
+
+                      // 2. Jika belum ada data dari ESP32, tampilkan efek loading
+                      if (currentData.isEmpty) {
+                        return const SizedBox(
+                          height: 150,
+                          child: Center(
+                            child: CircularProgressIndicator(
+                              color: Color(0xFF163832),
+                            ),
+                          ),
+                        );
+                      }
+
+                      // 3. Tampilkan Grafik
+                      return SizedBox(
+                        height: 150,
+                        width: double.infinity,
+                        child: LineChart(
+                          LineChartData(
+                            gridData: FlGridData(
+                              show: true,
+                              drawVerticalLine: true,
+                              getDrawingHorizontalLine: (value) => const FlLine(
+                                color: Colors.black12,
+                                strokeWidth: 1,
+                                dashArray: [5, 5],
+                              ),
+                              getDrawingVerticalLine: (value) => const FlLine(
+                                color: Colors.black12,
+                                strokeWidth: 1,
+                                dashArray: [5, 5],
+                              ),
+                            ),
+                            titlesData: const FlTitlesData(
+                              rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                              topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                              // Sembunyikan jam X sementara karena ESP32 nge-spam tiap 2 detik
+                              bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                            ),
+                            borderData: FlBorderData(show: false),
+                            lineBarsData: [
+                              LineChartBarData(
+                                spots: currentData,
+                                isCurved: true, // Garis melengkung halus
+                                color: lineColor,
+                                barWidth: 3,
+                                isStrokeCapRound: true,
+                                dotData: const FlDotData(show: false), // Sembunyikan titik bulat
+                                belowBarData: BarAreaData(
+                                  show: true,
+                                  color: lineColor.withOpacity(0.1), // Efek bayangan di bawah garis
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  // --- SAMPAI SINI ---
                 ],
               ),
             ),
