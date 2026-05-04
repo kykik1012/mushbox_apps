@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/dashboard_provider.dart';
 import 'dashboard_screen.dart';
 import 'budidaya_screen.dart';
 import 'otomasi_screen.dart';
@@ -12,7 +14,8 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-  int _selectedIndex = 0; // Menyimpan index menu yang sedang aktif (0 = Dashboard)
+  int _selectedIndex =
+      0; // Menyimpan index menu yang sedang aktif (0 = Dashboard)
 
   // Daftar halaman yang akan ditampilkan berdasarkan index navbar
   final List<Widget> _pages = [
@@ -21,6 +24,15 @@ class _MainScreenState extends State<MainScreen> {
     const OtomasiScreen(),
     const ProfileScreen(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    // Memanggil fungsi koneksi MQTT dari provider setelah frame UI pertama di-render
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<DashboardProvider>(context, listen: false).initMqtt();
+    });
+  }
 
   // Fungsi yang dipanggil saat tombol navbar ditekan
   void _onItemTapped(int index) {
@@ -34,12 +46,14 @@ class _MainScreenState extends State<MainScreen> {
     return Scaffold(
       // Body akan menampilkan halaman dari list _pages sesuai dengan _selectedIndex
       body: _pages[_selectedIndex],
-      
+
       // Bottom Navigation Bar
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed, // fixed agar label selalu terlihat
         backgroundColor: Colors.white,
-        selectedItemColor: const Color(0xFF163832), // Warna saat aktif (Hijau Gelap)
+        selectedItemColor: const Color(
+          0xFF163832,
+        ), // Warna saat aktif (Hijau Gelap)
         unselectedItemColor: Colors.grey[400], // Warna saat tidak aktif
         selectedFontSize: 12,
         unselectedFontSize: 12,
