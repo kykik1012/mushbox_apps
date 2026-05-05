@@ -1,5 +1,6 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:fl_chart/fl_chart.dart'; // IMPORT FL_CHART
+import 'package:fl_chart/fl_chart.dart';
 import '../services/mqtt_service.dart';
 
 class DashboardProvider with ChangeNotifier {
@@ -9,63 +10,71 @@ class DashboardProvider with ChangeNotifier {
   String kelembabanUdara = "--"; 
   String suhu = "--";
   String levelAir = "--";
+  String kualitasUdara = "--"; // Tambahan untuk MQ-135
 
   String selectedChart = 'Tanah';
 
-  // --- VARIABEL UNTUK GRAFIK ---
   List<FlSpot> chartDataTanah = [];
   List<FlSpot> chartDataUdara = [];
   List<FlSpot> chartDataSuhu = [];
-  double _timeIndex = 0; // Sumbu X yang terus berjalan
+  double _timeIndex = 0;
 
-  bool isSensorAOnline = true;
-  bool isPompaOnline = false;
-  bool isSensorBOnline = false;
-  bool isKipasOnline = true;
+  // --- VARIABEL STATUS PERANGKAT (Disamakan dengan skema diagram) ---
+  bool isNodeSensorOnline = false; // Mewakili ESP32 (DHT11, Soil, HC-SR04, MQ-135)
+  bool isPompaOnline = false;      // Mewakili Water Pump
+  bool isKipasOnline = false;      // Mewakili Fan
+
+  Timer? _sensorTimeout;
 
   DashboardProvider() {}
 
   void initMqtt() {
     _mqttService.connect(
       onMessageReceived: (data) {
-        // Tambah waktu untuk sumbu X tiap ada data masuk
         _timeIndex++; 
 
-        // TANGKAP DATA DAN MASUKKAN KE TITIK GRAFIK
-        if (data['temp'] != null) {
-          double valSuhu = (data['temp'] as num).toDouble();
-          suhu = valSuhu.toStringAsFixed(1); 
-          chartDataSuhu.add(FlSpot(_timeIndex, valSuhu));
-          if (chartDataSuhu.length > 20) chartDataSuhu.removeAt(0); // Batasi 20 titik
-        }
-        
-        if (data['hum'] != null) {
-          double valHum = (data['hum'] as num).toDouble();
-          kelembabanUdara = valHum.toStringAsFixed(1);
-          chartDataUdara.add(FlSpot(_timeIndex, valHum));
-          if (chartDataUdara.length > 20) chartDataUdara.removeAt(0);
-        }
+        // TANGKAP DATA SENSOR (Termasuk data baru dari MQ-135 & Ultrasonik)
+        if (data['temp'] != null) suhu = (data['temp'] as num).toStringAsFixed(1);
+        if (data['hum'] != null) kelembabanUdara = (data['hum'] as num).toStringAsFixed(1);
+        if (data['soil'] != null) kelembabanTanah = (data['soil'] as num).toStringAsFixed(0);
+        if (data['dist'] != null) levelAir = (data['dist'] as num).toStringAsFixed(0); // HC-SR04
+        // if (data['co2'] != null) kualitasUdara = (data['co2'] as num).toStringAsFixed(0); // MQ-135
 
-        if (data['soil'] != null) {
-          double valSoil = (data['soil'] as num).toDouble();
-          kelembabanTanah = valSoil.toStringAsFixed(0); // Soil bilangan bulat
-          chartDataTanah.add(FlSpot(_timeIndex, valSoil));
-          if (chartDataTanah.length > 20) chartDataTanah.removeAt(0);
-        }
-        
-        if (data['dist'] != null) {
-          double valDist = (data['dist'] as num).toDouble();
-          levelAir = valDist.toStringAsFixed(1);
-        }
-        
+        // ... (Kode memasukkan data ke chartData biarkan seperti biasa) ...
+
+        // 1. CEK STATUS AKTUATOR DARI RELAY
+        // Pastikan kodingan ESP32-mu mengirim status terpisah untuk kipas dan pompa
+        if (data['pump'] != null) isPompaOnline = data['pump'] == 'ON';
+        if (data['fan'] != null) isKipasOnline = data['fan'] == 'ON';
+
+        // 2. CEK STATUS ESP32 (Fitur Timeout)
+        isNodeSensorOnline = true; 
+        _resetSensorTimeout();
+
         notifyListeners(); 
       },
       onDisconnected: () {
-        isPompaOnline = false;
-        notifyListeners();
+        _setAllDevicesOffline();
         debugPrint("Provider: Koneksi MQTT Terputus!");
       }
     );
+  }
+
+  void _resetSensorTimeout() {
+    _sensorTimeout?.cancel();
+    
+    _sensorTimeout = Timer(const Duration(seconds: 10), () {
+      // Jika 10 detik ESP32 tidak mengirim data, anggap semua sistem mati
+      _setAllDevicesOffline();
+      debugPrint("⚠️ ESP32 Offline: Tidak ada data masuk selama 10 detik!");
+    });
+  }
+
+  void _setAllDevicesOffline() {
+    isNodeSensorOnline = false;
+    isPompaOnline = false;
+    isKipasOnline = false;
+    notifyListeners();
   }
 
   void setChartMode(String mode) {

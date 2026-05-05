@@ -4,6 +4,8 @@ import '../providers/dashboard_provider.dart';
 import '../widgets/metric_card.dart';
 import '../widgets/device_status_item.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'riwayat_grafik_screen.dart';
+
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -194,6 +196,25 @@ class DashboardScreen extends StatelessWidget {
                     },
                   ),
                   // --- SAMPAI SINI ---
+                  const SizedBox(height: 16), // Jarak antara grafik dan tombol
+                  Align(
+                    alignment: Alignment.bottomRight,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF163832), // Warna gelap
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      ),
+                      icon: const Icon(Icons.history, color: Colors.white, size: 18),
+                      label: const Text('Riwayat', style: TextStyle(color: Colors.white)),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const RiwayatGrafikScreen()),
+                        );
+                      },
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -201,26 +222,40 @@ class DashboardScreen extends StatelessWidget {
 
             // 3. STATUS PERANGKAT
             Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Status Perangkat', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                  const SizedBox(height: 16),
-                  Consumer<DashboardProvider>(
-                    builder: (context, prov, child) => Column(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        DeviceStatusItem(deviceName: 'Sensor Area A', isOnline: prov.isSensorAOnline, icon: Icons.wifi),
-                        DeviceStatusItem(deviceName: 'Pompa Utama', isOnline: prov.isPompaOnline, icon: Icons.water_drop),
-                        DeviceStatusItem(deviceName: 'Sensor Area B', isOnline: prov.isSensorBOnline, icon: Icons.wifi_off),
-                        DeviceStatusItem(deviceName: 'Kipas Ventilasi', isOnline: prov.isKipasOnline, icon: Icons.mode_fan_off),
+                        const Text('Status Perangkat', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                        const SizedBox(height: 16),
+                        Consumer<DashboardProvider>(
+                          builder: (context, prov, child) => Column(
+                            children: [
+                              // Node Sensor Utama (Mewakili koneksi ke ESP32 & 4 Sensor)
+                              DeviceStatusItem(
+                                deviceName: 'Node Sensor Utama', 
+                                isOnline: prov.isNodeSensorOnline, 
+                                icon: Icons.hub
+                              ),
+                              // Water Pump
+                              DeviceStatusItem(
+                                deviceName: 'Pompa Penyemprot', 
+                                isOnline: prov.isPompaOnline, 
+                                icon: Icons.water_drop
+                              ),
+                              // Fan
+                              DeviceStatusItem(
+                                deviceName: 'Kipas Ventilasi', 
+                                isOnline: prov.isKipasOnline, 
+                                icon: Icons.mode_fan_off
+                              ),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
                   ),
-                ],
-              ),
-            ),
           ],
         ),
       ),
