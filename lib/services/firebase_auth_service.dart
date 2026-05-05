@@ -33,6 +33,15 @@ class FirebaseAuthService {
     }
   }
 
+  // Fungsi Logout
+  Future<void> logout() async {
+    try {
+      await _auth.signOut();
+    } catch (e) {
+      throw Exception('Gagal keluar dari akun: $e');
+    }
+  }
+
   Future<void> updateAccountSecurity({
     required String currentPassword,
     String? newEmail,

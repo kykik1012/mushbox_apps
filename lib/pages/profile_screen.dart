@@ -5,6 +5,7 @@ import '../theme/app_colors.dart';
 import 'login_screen.dart'; // Untuk navigasi saat logout
 import '../widgets/profile_menu_item.dart';
 import 'package:image_picker/image_picker.dart';
+import '../services/firebase_auth_service.dart'; // Tambahkan ini
 import 'keamanan_akun_screen.dart'; // Import layar keamanan akun
 
 class ProfileScreen extends StatefulWidget {
@@ -170,15 +171,55 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // Fungsi Logout
+  void _showLogoutConfirmation() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Konfirmasi Keluar', style: TextStyle(fontWeight: FontWeight.bold)),
+          content: const Text('Apakah Anda yakin ingin keluar dari aplikasi?'),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          actions: [
+            // Tombol Batal
+            TextButton(
+              onPressed: () => Navigator.pop(context), // Tutup pop-up
+              child: const Text('Batal', style: TextStyle(color: Colors.grey)),
+            ),
+            // Tombol Ya, Keluar
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              onPressed: () {
+                Navigator.pop(context); // Tutup pop-up konfirmasi
+                _handleLogout(); // Jalankan proses logout
+              },
+              child: const Text('Ya, Keluar', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // 2. Fungsi Logout (sekarang memanggil Service, bukan Firebase langsung)
   Future<void> _handleLogout() async {
-    await _auth.signOut();
-    if (mounted) {
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (context) => const LoginScreen()),
-        (route) => false, // Hapus semua riwayat halaman agar tidak bisa di-back
-      );
+    try {
+      // Memanggil fungsi dari service yang baru kita buat
+      await FirebaseAuthService().logout(); 
+      
+      if (mounted) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
+          (route) => false, // Hapus riwayat agar tidak bisa di-back
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      }
     }
   }
 
@@ -319,7 +360,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 leading: const Icon(Icons.logout, color: Colors.red),
                 title: const Text('Keluar', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
                 subtitle: const Text('Sampai jumpa lagi!', style: TextStyle(color: Colors.redAccent, fontSize: 12)),
-                onTap: _handleLogout, // Panggil fungsi logout
+                
+                // UBAH BAGIAN INI:
+                onTap: _showLogoutConfirmation, 
               ),
             ),
           ],
