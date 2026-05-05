@@ -7,6 +7,7 @@ import 'pages/splash_screen.dart';
 import 'package:provider/provider.dart';
 import 'providers/dashboard_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'providers/budidaya_provider.dart';
 
 void main() async { 
   // 4. Wajib dipanggil sebelum inisialisasi Firebase
@@ -24,9 +25,9 @@ void main() async {
  runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => DashboardProvider()),
-        // Nanti kalau ada AuthProvider, bisa ditambah di sini
-      ],
+                    ChangeNotifierProvider(create: (_) => DashboardProvider()),
+                    ChangeNotifierProvider(create: (_) => BudidayaProvider()),
+                  ],
       child: DevicePreview(
         enabled: !kReleaseMode,
         builder: (context) => const MyApp(), 
