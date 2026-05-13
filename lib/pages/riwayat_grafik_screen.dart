@@ -81,6 +81,7 @@ class _RiwayatGrafikScreenState extends State<RiwayatGrafikScreen> {
                               _buildChartCard('Riwayat Kelembaban Udara', 'Data ${prov.selectedFilter}', prov.avgHum, prov.humSpots, const Color(0xFF8EB69B)),
                               const SizedBox(height: 16),
                               _buildChartCard('Riwayat Suhu', 'Data ${prov.selectedFilter}', prov.avgTemp, prov.tempSpots, Colors.orange),
+                              _buildChartCard('Riwayat Kualitas Udara (CO2)', 'Data ${prov.selectedFilter}', prov.avgCo2, prov.co2Spots, Colors.purple),
                             ],
                           ),
               ),

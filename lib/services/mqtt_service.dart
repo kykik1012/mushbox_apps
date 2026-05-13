@@ -80,4 +80,17 @@ class MqttService {
   void disconnect() {
     _client.disconnect();
   }
+
+  // ================= TAMBAHAN BARU =================
+  // Fungsi ini digunakan untuk mengirim pesan "ON" / "OFF" ke ESP32
+  void publishMessage(String topic, String message) {
+    if (_client.connectionStatus?.state == MqttConnectionState.connected) {
+      final builder = MqttClientPayloadBuilder();
+      builder.addString(message);
+      _client.publishMessage(topic, MqttQos.atLeastOnce, builder.payload!);
+      debugPrint('📤 [MQTT] Mengirim perintah manual ke $topic: $message');
+    } else {
+      debugPrint('❌ [MQTT] Gagal mengirim: Aplikasi belum terkoneksi ke broker');
+    }
+  }
 }

@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import 'providers/dashboard_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'providers/riwayat_provider.dart';
+import 'providers/otomasi_provider.dart';
 
 void main() async { 
   // 4. Wajib dipanggil sebelum inisialisasi Firebase
@@ -27,6 +28,7 @@ void main() async {
       providers: [
                     ChangeNotifierProvider(create: (_) => DashboardProvider()),
                     ChangeNotifierProvider(create: (_) => RiwayatProvider()),
+                    ChangeNotifierProvider(create: (_) => OtomasiProvider()),
                   ],
       child: DevicePreview(
         enabled: !kReleaseMode,

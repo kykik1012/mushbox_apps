@@ -17,6 +17,7 @@ class DashboardProvider with ChangeNotifier {
   List<FlSpot> chartDataTanah = [];
   List<FlSpot> chartDataUdara = [];
   List<FlSpot> chartDataSuhu = [];
+  List<FlSpot> chartDataCo2 = [];
   double _timeIndex = 0;
 
   // --- VARIABEL STATUS PERANGKAT (Disamakan dengan skema diagram) ---
@@ -38,13 +39,35 @@ class DashboardProvider with ChangeNotifier {
         if (data['hum'] != null) kelembabanUdara = (data['hum'] as num).toStringAsFixed(1);
         if (data['soil'] != null) kelembabanTanah = (data['soil'] as num).toStringAsFixed(0);
         if (data['dist'] != null) levelAir = (data['dist'] as num).toStringAsFixed(0); // HC-SR04
-        // if (data['co2'] != null) kualitasUdara = (data['co2'] as num).toStringAsFixed(0); // MQ-135
+        if (data['co2'] != null) kualitasUdara = (data['co2'] as num).toStringAsFixed(0); // MQ-135
 
-        // ... (Kode memasukkan data ke chartData biarkan seperti biasa) ...
+       // TANGKAP DATA DAN MASUKKAN KE TITIK GRAFIK
+        if (data['temp'] != null) {
+          chartDataSuhu.add(FlSpot(_timeIndex, (data['temp'] as num).toDouble()));
+          if (chartDataSuhu.length > 20) chartDataSuhu.removeAt(0); // Batasi 20 titik agar tidak menumpuk
+        }
+        
+        if (data['hum'] != null) {
+          chartDataUdara.add(FlSpot(_timeIndex, (data['hum'] as num).toDouble()));
+          if (chartDataUdara.length > 20) chartDataUdara.removeAt(0);
+        }
+
+        if (data['soil'] != null) {
+          chartDataTanah.add(FlSpot(_timeIndex, (data['soil'] as num).toDouble()));
+          if (chartDataTanah.length > 20) chartDataTanah.removeAt(0);
+        }
+
+        if (data['co2'] != null) {
+          chartDataCo2.add(FlSpot(_timeIndex, (data['co2'] as num).toDouble()));
+          if (chartDataCo2.length > 20) chartDataCo2.removeAt(0); 
+        }
 
         // 1. CEK STATUS AKTUATOR DARI RELAY
         // Pastikan kodingan ESP32-mu mengirim status terpisah untuk kipas dan pompa
-        if (data['pump'] != null) isPompaOnline = data['pump'] == 'ON';
+        // 1. CEK STATUS AKTUATOR DARI RELAY
+        // KITA TUKAR LOGIKANYA DI SINI KARENA HARDWARE TERBALIK
+        // 1. CEK STATUS AKTUATOR DARI RELAY (KEMBALIKAN NORMAL)
+        if (data['pump'] != null) isPompaOnline = data['pump'] == 'ON'; 
         if (data['fan'] != null) isKipasOnline = data['fan'] == 'ON';
 
         // 2. CEK STATUS ESP32 (Fitur Timeout)
@@ -79,6 +102,20 @@ class DashboardProvider with ChangeNotifier {
 
   void setChartMode(String mode) {
     selectedChart = mode;
+    notifyListeners();
+  }
+
+  void manualTogglePompa(bool turnOn) {
+    String msg = turnOn ? "ON" : "OFF";
+    _mqttService.publishMessage("mewing/relay/pump", msg); // Pompa ke jalur pump
+    isPompaOnline = turnOn;
+    notifyListeners();
+  }
+
+  void manualToggleKipas(bool turnOn) {
+    String msg = turnOn ? "ON" : "OFF";
+    _mqttService.publishMessage("mewing/relay/fan", msg); // Kipas ke jalur fan
+    isKipasOnline = turnOn;
     notifyListeners();
   }
 }
