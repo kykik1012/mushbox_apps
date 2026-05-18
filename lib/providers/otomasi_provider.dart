@@ -47,5 +47,45 @@ class OtomasiProvider with ChangeNotifier {
     }
   }
 
-  // TODO: Nanti kita tambahkan fungsi toggleJadwal, deleteJadwal, dan Add ke sini
+  // Fungsi untuk menambah trigger baru
+  Future<void> addTrigger(Map<String, dynamic> data) async {
+    try {
+      await _supabase.from('otomasi_trigger').insert(data);
+      await fetchData(); // Refresh list setelah menambah
+    } catch (e) {
+      debugPrint('Error adding trigger: $e');
+      rethrow;
+    }
+  }
+
+  // Menyalakan / Mematikan Jadwal Waktu
+  Future<void> toggleJadwal(String id, bool currentValue) async {
+    try {
+      await _supabase.from('otomasi_jadwal').update({'is_active': !currentValue}).eq('id', id);
+      await fetchData();
+    } catch (e) {
+      debugPrint('Error toggle jadwal: $e');
+    }
+  }
+
+  // Menghapus Jadwal Waktu
+  Future<void> deleteJadwal(String id) async {
+    try {
+      await _supabase.from('otomasi_jadwal').delete().eq('id', id);
+      await fetchData();
+    } catch (e) {
+      debugPrint('Error delete jadwal: $e');
+    }
+  }
+
+  // Menambah Jadwal Waktu Baru
+  Future<void> addJadwal(Map<String, dynamic> data) async {
+    try {
+      await _supabase.from('otomasi_jadwal').insert(data);
+      await fetchData();
+    } catch (e) {
+      debugPrint('Error adding jadwal: $e');
+      rethrow;
+    }
+  }
 }
