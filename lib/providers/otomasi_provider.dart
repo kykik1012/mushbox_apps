@@ -59,7 +59,7 @@ class OtomasiProvider with ChangeNotifier {
   }
 
   // Menyalakan / Mematikan Jadwal Waktu
-  Future<void> toggleJadwal(String id, bool currentValue) async {
+  Future<void> toggleJadwal(dynamic id, bool currentValue) async {
     try {
       await _supabase.from('otomasi_jadwal').update({'is_active': !currentValue}).eq('id', id);
       await fetchData();
@@ -69,7 +69,7 @@ class OtomasiProvider with ChangeNotifier {
   }
 
   // Menghapus Jadwal Waktu
-  Future<void> deleteJadwal(String id) async {
+  Future<void> deleteJadwal(dynamic id) async {
     try {
       await _supabase.from('otomasi_jadwal').delete().eq('id', id);
       await fetchData();

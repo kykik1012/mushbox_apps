@@ -254,7 +254,49 @@ class _OtomasiScreenState extends State<OtomasiScreen> with SingleTickerProvider
                       Switch(value: isActive, activeColor: const Color(0xFF163832), onChanged: (val) => prov.toggleJadwal(item['id'], isActive)),
                     ],
                   ),
-                  IconButton(icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20), onPressed: () => prov.deleteJadwal(item['id'])),
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
+                    onPressed: () {
+                      // Munculkan kotak dialog konfirmasi
+                      showDialog(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return AlertDialog(
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            title: const Text("Hapus Jadwal?"),
+                            content: const Text("Apakah kamu yakin ingin menghapus jadwal penyemprotan rutin ini?"),
+                            actions: [
+                              // Tombol Batal
+                              TextButton(
+                                child: const Text("Batal", style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+                                onPressed: () => Navigator.pop(context),
+                              ),
+                              // Tombol Hapus Nyata
+                              TextButton(
+                                child: const Text("Hapus", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                                onPressed: () async {
+                                  Navigator.pop(context); // Tutup popup dialog dulu
+                                  
+                                  // Eksekusi hapus ke Supabase
+                                  await prov.deleteJadwal(item['id']); 
+                                  
+                                  // Tampilkan notifikasi sukses kecil di bawah layar
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Jadwal berhasil dihapus!'),
+                                        backgroundColor: Colors.redAccent,
+                                      ),
+                                    );
+                                  }
+                                },
+                              ),
+                            ],
+                          );
+                        },
+                      );
+                    },
+                  ),
                 ],
               ),
               const SizedBox(height: 12),
@@ -304,7 +346,7 @@ class _OtomasiScreenState extends State<OtomasiScreen> with SingleTickerProvider
   }
 
   // ====================================================
-  // --- BARIS BARU: POPUP FORM TAMBAH JADWAL JAM ---
+  // --- PERBAIKAN: POPUP FORM TAMBAH JADWAL JAM ---
   // ====================================================
   void _showAddJadwalForm() {
     final prov = Provider.of<OtomasiProvider>(context, listen: false);
@@ -312,89 +354,92 @@ class _OtomasiScreenState extends State<OtomasiScreen> with SingleTickerProvider
     String selectedAktuator = 'Pompa';
     String selectedPerintah = 'ON';
 
-    // StateSetter lokal untuk mengupdate teks jam di dalam bottom sheet
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true, // TAMBAHAN 1: Mengizinkan form mekar melebihi batas default
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(25))),
       builder: (context) => StatefulBuilder(
         builder: (context, setModalState) => Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Tambah Jadwal Waktu', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 24),
+          // TAMBAHAN 2: Memberi jarak aman di bagian bawah layar
+          padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom + 24, left: 24, right: 24, top: 24),
+          child: SingleChildScrollView( // TAMBAHAN 3: Membungkus form agar bisa di-scroll
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Tambah Jadwal Waktu', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 24),
 
-              // Tombol untuk memunculkan Android Time Picker asli
-              _buildLabel("Pilih Jam & Menit"),
-              InkWell(
-                onTap: () async {
-                  final TimeOfDay? time = await showTimePicker(context: context, initialTime: selectedTime);
-                  if (time != null) {
-                    setModalState(() => selectedTime = time);
-                  }
-                },
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(12)),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        "${selectedTime.hour.toString().padLeft(2, '0')}:${selectedTime.minute.toString().padLeft(2, '0')}",
-                        style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF163832)),
-                      ),
-                      const Icon(Icons.access_time, color: Color(0xFF163832)),
-                    ],
+                // Tombol untuk memunculkan Android Time Picker asli
+                _buildLabel("Pilih Jam & Menit"),
+                InkWell(
+                  onTap: () async {
+                    final TimeOfDay? time = await showTimePicker(context: context, initialTime: selectedTime);
+                    if (time != null) {
+                      setModalState(() => selectedTime = time);
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(12)),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          "${selectedTime.hour.toString().padLeft(2, '0')}:${selectedTime.minute.toString().padLeft(2, '0')}",
+                          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF163832)),
+                        ),
+                        const Icon(Icons.access_time, color: Color(0xFF163832)),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 16),
+                const SizedBox(height: 16),
 
-              // Pilih Aktuator
-              _buildLabel("Pilih Perangkat"),
-              DropdownButtonFormField<String>(
-                value: selectedAktuator,
-                decoration: _inputDecoration(),
-                items: ['Pompa', 'Kipas'].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
-                onChanged: (val) => selectedAktuator = val!,
-              ),
-              const SizedBox(height: 16),
-
-              // Pilih Perintah
-              _buildLabel("Aksi"),
-              DropdownButtonFormField<String>(
-                value: selectedPerintah,
-                decoration: _inputDecoration(),
-                items: ['ON', 'OFF'].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
-                onChanged: (val) => selectedPerintah = val!,
-              ),
-              const SizedBox(height: 32),
-
-              // Tombol Simpan Jadwal
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF163832), padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                  onPressed: () async {
-                    // Konversi format TimeOfDay ke format "HH:mm:00" yang disukai database
-                    final String formattedTime = "${selectedTime.hour.toString().padLeft(2, '0')}:${selectedTime.minute.toString().padLeft(2, '0')}:00";
-
-                    final Map<String, dynamic> newJadwal = {
-                      'waktu': formattedTime,
-                      'aktuator': selectedAktuator,
-                      'perintah': selectedPerintah,
-                      'is_active': true,
-                    };
-
-                    await prov.addJadwal(newJadwal);
-                    if (mounted) Navigator.pop(context);
-                  },
-                  child: const Text('Simpan Jadwal', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                // Pilih Aktuator
+                _buildLabel("Pilih Perangkat"),
+                DropdownButtonFormField<String>(
+                  value: selectedAktuator,
+                  decoration: _inputDecoration(),
+                  items: ['Pompa', 'Kipas'].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+                  onChanged: (val) => selectedAktuator = val!,
                 ),
-              ),
-            ],
+                const SizedBox(height: 16),
+
+                // Pilih Perintah
+                _buildLabel("Aksi"),
+                DropdownButtonFormField<String>(
+                  value: selectedPerintah,
+                  decoration: _inputDecoration(),
+                  items: ['ON', 'OFF'].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+                  onChanged: (val) => selectedPerintah = val!,
+                ),
+                const SizedBox(height: 32),
+
+                // Tombol Simpan Jadwal
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF163832), padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                    onPressed: () async {
+                      // Konversi format TimeOfDay ke format "HH:mm:00" yang disukai database
+                      final String formattedTime = "${selectedTime.hour.toString().padLeft(2, '0')}:${selectedTime.minute.toString().padLeft(2, '0')}:00";
+
+                      final Map<String, dynamic> newJadwal = {
+                        'waktu': formattedTime,
+                        'aktuator': selectedAktuator,
+                        'perintah': selectedPerintah,
+                        'is_active': true,
+                      };
+
+                      await prov.addJadwal(newJadwal);
+                      if (mounted) Navigator.pop(context);
+                    },
+                    child: const Text('Simpan Jadwal', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
