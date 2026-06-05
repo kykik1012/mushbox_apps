@@ -20,7 +20,6 @@ class _MainScreenState extends State<MainScreen> {
   // Daftar halaman yang akan ditampilkan berdasarkan index navbar
   final List<Widget> _pages = [
     const DashboardScreen(),
-    const BudidayaScreen(),
     const OtomasiScreen(),
     const ProfileScreen(),
   ];
@@ -64,11 +63,6 @@ class _MainScreenState extends State<MainScreen> {
             icon: Icon(Icons.dashboard_outlined),
             activeIcon: Icon(Icons.dashboard), // Ikon berubah saat aktif
             label: 'Dashboard',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.eco_outlined),
-            activeIcon: Icon(Icons.eco),
-            label: 'Budidaya',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.settings_input_component_outlined),

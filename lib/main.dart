@@ -9,6 +9,7 @@ import 'providers/dashboard_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'providers/riwayat_provider.dart';
 import 'providers/otomasi_provider.dart';
+import 'services/notification_service.dart';
 
 void main() async { 
   // 4. Wajib dipanggil sebelum inisialisasi Firebase
@@ -22,6 +23,7 @@ void main() async {
     url: 'https://qkenpvuylxxholqdgtet.supabase.co',
     anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFrZW5wdnV5bHh4aG9scWRndGV0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3MzIyMzIsImV4cCI6MjA5MjMwODIzMn0.-pLBou8PvmgQs4R8FBNPNCARtA0XRynIxwz-WxeZbtE',           
   );
+  await NotificationService.init();
 
  runApp(
     MultiProvider(

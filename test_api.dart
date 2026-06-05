@@ -1,0 +1,1 @@
+import 'package:flutter_local_notifications/flutter_local_notifications.dart'; void main() { final plugin = FlutterLocalNotificationsPlugin(); plugin.initialize(settings: const InitializationSettings()); plugin.show(id: 0, title: 'test', body: 'test', notificationDetails: const NotificationDetails()); }

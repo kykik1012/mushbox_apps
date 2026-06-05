@@ -7,6 +7,27 @@ class OtomasiProvider with ChangeNotifier {
   bool isLoading = true;
   List<dynamic> triggers = [];
   List<dynamic> schedules = [];
+  List<Map<String, dynamic>> automationHistory = [];
+  bool isHistoryLoading = false;
+
+  Future<void> fetchHistory() async {
+    isHistoryLoading = true;
+    notifyListeners();
+
+    try {
+      final response = await _supabase
+          .from('otomasi_riwayat')
+          .select('*')
+          .order('created_at', ascending: false); // Menampilkan data terbaru paling atas
+
+      automationHistory = List<Map<String, dynamic>>.from(response);
+    } catch (e) {
+      debugPrint('Error fetching history: $e');
+    } finally {
+      isHistoryLoading = false;
+      notifyListeners();
+    }
+  }
 
   // Mengambil data saat aplikasi dibuka
   Future<void> fetchData() async {

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../services/mqtt_service.dart';
+import '../services/notification_service.dart'; // 1. TAMBAHAN IMPORT NOTIFIKASI
 
 class DashboardProvider with ChangeNotifier {
   final MqttService _mqttService = MqttService();
@@ -10,9 +11,10 @@ class DashboardProvider with ChangeNotifier {
   String kelembabanUdara = "--"; 
   String suhu = "--";
   String levelAir = "--";
-  String kualitasUdara = "--"; // Tambahan untuk MQ-135
+  String kualitasUdara = "--"; 
 
   String selectedChart = 'Tanah';
+  String _statusAirTerakhir = "Aman";
 
   List<FlSpot> chartDataTanah = [];
   List<FlSpot> chartDataUdara = [];
@@ -20,10 +22,9 @@ class DashboardProvider with ChangeNotifier {
   List<FlSpot> chartDataCo2 = [];
   double _timeIndex = 0;
 
-  // --- VARIABEL STATUS PERANGKAT (Disamakan dengan skema diagram) ---
-  bool isNodeSensorOnline = false; // Mewakili ESP32 (DHT11, Soil, HC-SR04, MQ-135)
-  bool isPompaOnline = false;      // Mewakili Water Pump
-  bool isKipasOnline = false;      // Mewakili Fan
+  bool isNodeSensorOnline = false; 
+  bool isPompaOnline = false;      
+  bool isKipasOnline = false;      
 
   Timer? _sensorTimeout;
 
@@ -34,17 +35,51 @@ class DashboardProvider with ChangeNotifier {
       onMessageReceived: (data) {
         _timeIndex++; 
 
-        // TANGKAP DATA SENSOR (Termasuk data baru dari MQ-135 & Ultrasonik)
+        // TANGKAP DATA SENSOR 
         if (data['temp'] != null) suhu = (data['temp'] as num).toStringAsFixed(1);
         if (data['hum'] != null) kelembabanUdara = (data['hum'] as num).toStringAsFixed(1);
         if (data['soil'] != null) kelembabanTanah = (data['soil'] as num).toStringAsFixed(0);
-        if (data['dist'] != null) levelAir = (data['dist'] as num).toStringAsFixed(0); // HC-SR04
-        if (data['co2'] != null) kualitasUdara = (data['co2'] as num).toStringAsFixed(0); // MQ-135
+        if (data['co2'] != null) kualitasUdara = (data['co2'] as num).toStringAsFixed(0); 
+
+        // TANGKAP DATA LEVEL AIR & JALANKAN LOGIKA NOTIFIKASI
+        if (data['dist'] != null) {
+          double distance = (data['dist'] as num).toDouble();
+          levelAir = distance.toStringAsFixed(0);
+
+          // =========================================================
+          // 2. TAMBAHAN LOGIKA NOTIFIKASI AIR (ANTI-SPAM)
+          // =========================================================
+          if (distance > 14) {
+            if (_statusAirTerakhir != "Sedikit") {
+              NotificationService.showNotification(
+                id: 1, 
+                title: "⚠️ Peringatan Kritis", 
+                body: "Pasokan air tersisa sedikit!"
+              );
+              _statusAirTerakhir = "Sedikit"; // Kunci agar tidak spam
+            }
+          } 
+          else if (distance >= 11 && distance <= 14) {
+            if (_statusAirTerakhir != "Setengah") {
+              NotificationService.showNotification(
+                id: 1, 
+                title: "💧 Info Pasokan Air", 
+                body: "Pasokan air tersisa setengah."
+              );
+              _statusAirTerakhir = "Setengah"; // Kunci agar tidak spam
+            }
+          } 
+          else if (distance < 11) {
+            // Reset status jika air sudah diisi penuh lagi
+            _statusAirTerakhir = "Aman";
+          }
+          // =========================================================
+        }
 
        // TANGKAP DATA DAN MASUKKAN KE TITIK GRAFIK
         if (data['temp'] != null) {
           chartDataSuhu.add(FlSpot(_timeIndex, (data['temp'] as num).toDouble()));
-          if (chartDataSuhu.length > 20) chartDataSuhu.removeAt(0); // Batasi 20 titik agar tidak menumpuk
+          if (chartDataSuhu.length > 20) chartDataSuhu.removeAt(0); 
         }
         
         if (data['hum'] != null) {
@@ -62,15 +97,11 @@ class DashboardProvider with ChangeNotifier {
           if (chartDataCo2.length > 20) chartDataCo2.removeAt(0); 
         }
 
-        // 1. CEK STATUS AKTUATOR DARI RELAY
-        // Pastikan kodingan ESP32-mu mengirim status terpisah untuk kipas dan pompa
-        // 1. CEK STATUS AKTUATOR DARI RELAY
-        // KITA TUKAR LOGIKANYA DI SINI KARENA HARDWARE TERBALIK
-        // 1. CEK STATUS AKTUATOR DARI RELAY (KEMBALIKAN NORMAL)
+        // CEK STATUS AKTUATOR DARI RELAY
         if (data['pump'] != null) isPompaOnline = data['pump'] == 'ON'; 
         if (data['fan'] != null) isKipasOnline = data['fan'] == 'ON';
 
-        // 2. CEK STATUS ESP32 (Fitur Timeout)
+        // CEK STATUS ESP32 (Fitur Timeout)
         isNodeSensorOnline = true; 
         _resetSensorTimeout();
 
@@ -87,7 +118,6 @@ class DashboardProvider with ChangeNotifier {
     _sensorTimeout?.cancel();
     
     _sensorTimeout = Timer(const Duration(seconds: 10), () {
-      // Jika 10 detik ESP32 tidak mengirim data, anggap semua sistem mati
       _setAllDevicesOffline();
       debugPrint("⚠️ ESP32 Offline: Tidak ada data masuk selama 10 detik!");
     });
@@ -107,14 +137,14 @@ class DashboardProvider with ChangeNotifier {
 
   void manualTogglePompa(bool turnOn) {
     String msg = turnOn ? "ON" : "OFF";
-    _mqttService.publishMessage("mewing/relay/pump", msg); // Pompa ke jalur pump
+    _mqttService.publishMessage("mewing/relay/pump", msg); 
     isPompaOnline = turnOn;
     notifyListeners();
   }
 
   void manualToggleKipas(bool turnOn) {
     String msg = turnOn ? "ON" : "OFF";
-    _mqttService.publishMessage("mewing/relay/fan", msg); // Kipas ke jalur fan
+    _mqttService.publishMessage("mewing/relay/fan", msg); 
     isKipasOnline = turnOn;
     notifyListeners();
   }

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/otomasi_provider.dart';
 import '../providers/dashboard_provider.dart';
 import '../theme/app_colors.dart';
+import 'history_automation_screen.dart';
 
 class OtomasiScreen extends StatefulWidget {
   const OtomasiScreen({super.key});
@@ -41,17 +42,32 @@ class _OtomasiScreenState extends State<OtomasiScreen> with SingleTickerProvider
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        toolbarHeight: 80,
-        title: const Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Otomasi', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 24)),
-            Text('Aturan & penjadwalan otomatis', style: TextStyle(color: Colors.grey, fontSize: 14)),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          toolbarHeight: 80,
+          title: const Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Otomasi', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 24)),
+              Text('Aturan & penjadwalan otomatis', style: TextStyle(color: Colors.grey, fontSize: 14)),
+            ],
+          ),
+          // --- TAMBAHAN TOMBOL HISTORY DI SINI ---
+          actions: [
+            Padding(
+              padding: const EdgeInsets.only(right: 8.0),
+              child: IconButton(
+                icon: const Icon(Icons.history, color: Color(0xFF163832), size: 28),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const HistoryAutomationScreen()),
+                  );
+                },
+              ),
+            )
           ],
-        ),
-        bottom: PreferredSize(
+          bottom: PreferredSize(
           preferredSize: const Size.fromHeight(60),
           child: Container(
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
