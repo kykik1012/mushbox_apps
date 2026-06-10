@@ -382,15 +382,10 @@ class _OtomasiScreenState extends State<OtomasiScreen> with SingleTickerProvider
     );
   }
 
-  // --- FUNGSI POPUP FORM TAMBAH TRIGGER (LAMA) ---
-  // ==============================================
-  // PERBAIKAN 3: FORM BISA MENERIMA DATA EDIT
-  // ==============================================
   void _showAddTriggerForm({dynamic existingItem}) {
     final prov = Provider.of<OtomasiProvider>(context, listen: false);
     final bool isEdit = existingItem != null;
 
-    // Jika isEdit true, isi dengan data lama. Jika false, isi dengan default.
     String selectedSensor = isEdit ? existingItem['sensor'] : 'Suhu'; 
     String selectedOperator = isEdit ? existingItem['operator'] : '>'; 
     String selectedAktuator = isEdit ? existingItem['aktuator'] : 'Kipas'; 
@@ -408,7 +403,11 @@ class _OtomasiScreenState extends State<OtomasiScreen> with SingleTickerProvider
             Text(isEdit ? 'Edit Aturan Otomasi' : 'Tambah Aturan Baru', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)), const SizedBox(height: 24),
             _buildLabel("Pilih Sensor"), DropdownButtonFormField<String>(value: selectedSensor, decoration: _inputDecoration(), items: ['Suhu', 'Kelembaban Tanah', 'Kelembaban Udara', 'Level Air', 'CO2'].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(), onChanged: (val) => selectedSensor = val!), const SizedBox(height: 16),
             _buildLabel("Batas Atas (Target Hidup)"), TextField(controller: nilaiController, keyboardType: TextInputType.number, decoration: _inputDecoration(hint: "Contoh: 32")), const SizedBox(height: 16),
-            _buildLabel("Batas Bawah (Toleransi Mati) - Opsional"), TextField(controller: batasBawahController, keyboardType: TextInputType.number, decoration: _inputDecoration(hint: "Contoh: 28")), const SizedBox(height: 16),
+            
+            // UBAH LABEL MENJADI "WAJIB"
+            _buildLabel("Batas Bawah (Toleransi Mati) - Wajib"), 
+            TextField(controller: batasBawahController, keyboardType: TextInputType.number, decoration: _inputDecoration(hint: "Contoh: 28")), const SizedBox(height: 16),
+            
             _buildLabel("Pilih Aktuator"), DropdownButtonFormField<String>(value: selectedAktuator, decoration: _inputDecoration(), items: ['Kipas', 'Pompa'].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(), onChanged: (val) => selectedAktuator = val!), const SizedBox(height: 16),
             _buildLabel("Perintah Awal"), DropdownButtonFormField<String>(value: selectedPerintah, decoration: _inputDecoration(), items: ['ON', 'OFF'].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(), onChanged: (val) => selectedPerintah = val!), const SizedBox(height: 32),
             SizedBox(
@@ -416,19 +415,32 @@ class _OtomasiScreenState extends State<OtomasiScreen> with SingleTickerProvider
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF163832), padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))), 
                 onPressed: () async { 
-                  if (nilaiController.text.isEmpty) return; 
+                  
+                  // =========================================================
+                  // VALIDASI BARU: JIKA BATAS ATAS ATAU BATAS BAWAH KOSONG
+                  // =========================================================
+                  if (nilaiController.text.isEmpty || batasBawahController.text.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('⚠️ Batas Atas dan Batas Bawah wajib diisi!'), 
+                        backgroundColor: Colors.orangeAccent,
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                    return; // Menghentikan eksekusi kode ke bawah (tidak jadi disimpan)
+                  } 
+                  // =========================================================
                   
                   final Map<String, dynamic> newData = { 
                     'sensor': selectedSensor, 
                     'operator': selectedOperator, 
                     'nilai': double.parse(nilaiController.text), 
-                    'batas_bawah': batasBawahController.text.isEmpty ? null : double.parse(batasBawahController.text), 
+                    'batas_bawah': double.parse(batasBawahController.text), // Langsung di-parse karena dijamin tidak kosong
                     'aktuator': selectedAktuator, 
                     'perintah': selectedPerintah, 
-                    'is_active': isEdit ? existingItem['is_active'] : true, // Pertahankan status aktif jika edit
+                    'is_active': isEdit ? existingItem['is_active'] : true,
                   }; 
                   
-                  // JIKA EDIT MAKA UPDATE, JIKA BARU MAKA ADD
                   if (isEdit) {
                     await prov.updateTrigger(existingItem['id'], newData);
                   } else {
