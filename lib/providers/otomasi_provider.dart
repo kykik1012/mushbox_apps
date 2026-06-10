@@ -10,6 +10,17 @@ class OtomasiProvider with ChangeNotifier {
   List<Map<String, dynamic>> automationHistory = [];
   bool isHistoryLoading = false;
 
+  // Mengedit / Memperbarui Trigger yang sudah ada
+  Future<void> updateTrigger(dynamic id, Map<String, dynamic> data) async {
+    try {
+      await _supabase.from('otomasi_trigger').update(data).eq('id', id);
+      await fetchData(); // Refresh list setelah mengedit
+    } catch (e) {
+      debugPrint('Error updating trigger: $e');
+      rethrow;
+    }
+  }
+
   Future<void> fetchHistory() async {
     isHistoryLoading = true;
     notifyListeners();

@@ -28,6 +28,7 @@ class _OtomasiScreenState extends State<OtomasiScreen> with SingleTickerProvider
       Provider.of<OtomasiProvider>(context, listen: false).fetchData();
     });
   }
+  
 
   @override
   void dispose() {
@@ -194,8 +195,52 @@ class _OtomasiScreenState extends State<OtomasiScreen> with SingleTickerProvider
               ),
               Row(
                 children: [
-                  IconButton(icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20), onPressed: () => prov.deleteTrigger(item['id'])),
-                  IconButton(icon: const Icon(Icons.edit_outlined, color: Colors.grey, size: 20), onPressed: () {}),
+                  // ==============================================
+                  // PERBAIKAN 1: TOMBOL DELETE DENGAN KONFIRMASI
+                  // ==============================================
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return AlertDialog(
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            title: const Text("Hapus Aturan?"),
+                            content: const Text("Apakah kamu yakin ingin menghapus aturan otomasi ini?"),
+                            actions: [
+                              TextButton(
+                                child: const Text("Batal", style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+                                onPressed: () => Navigator.pop(context),
+                              ),
+                              TextButton(
+                                child: const Text("Hapus", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                                onPressed: () async {
+                                  Navigator.pop(context);
+                                  await prov.deleteTrigger(item['id']);
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('Aturan berhasil dihapus!'), backgroundColor: Colors.redAccent),
+                                    );
+                                  }
+                                },
+                              ),
+                            ],
+                          );
+                        },
+                      );
+                    },
+                  ),
+                  // ==============================================
+                  // PERBAIKAN 2: TOMBOL EDIT
+                  // ==============================================
+                  IconButton(
+                    icon: const Icon(Icons.edit_outlined, color: Colors.grey, size: 20),
+                    onPressed: () {
+                      // Buka form, tapi kirim data item yang mau diedit
+                      _showAddTriggerForm(existingItem: item); 
+                    },
+                  ),
                 ],
               )
             ],
@@ -338,23 +383,63 @@ class _OtomasiScreenState extends State<OtomasiScreen> with SingleTickerProvider
   }
 
   // --- FUNGSI POPUP FORM TAMBAH TRIGGER (LAMA) ---
-  void _showAddTriggerForm() {
+  // ==============================================
+  // PERBAIKAN 3: FORM BISA MENERIMA DATA EDIT
+  // ==============================================
+  void _showAddTriggerForm({dynamic existingItem}) {
     final prov = Provider.of<OtomasiProvider>(context, listen: false);
-    String selectedSensor = 'Suhu'; String selectedOperator = '>'; String selectedAktuator = 'Kipas'; String selectedPerintah = 'ON';
-    final TextEditingController nilaiController = TextEditingController(); final TextEditingController batasBawahController = TextEditingController();
+    final bool isEdit = existingItem != null;
+
+    // Jika isEdit true, isi dengan data lama. Jika false, isi dengan default.
+    String selectedSensor = isEdit ? existingItem['sensor'] : 'Suhu'; 
+    String selectedOperator = isEdit ? existingItem['operator'] : '>'; 
+    String selectedAktuator = isEdit ? existingItem['aktuator'] : 'Kipas'; 
+    String selectedPerintah = isEdit ? existingItem['perintah'] : 'ON';
+    
+    final TextEditingController nilaiController = TextEditingController(text: isEdit ? existingItem['nilai'].toString() : ''); 
+    final TextEditingController batasBawahController = TextEditingController(text: isEdit && existingItem['batas_bawah'] != null ? existingItem['batas_bawah'].toString() : '');
+
     showModalBottomSheet(
       context: context, isScrollControlled: true, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(25))),
       builder: (context) => Padding(
         padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom, left: 24, right: 24, top: 24),
         child: SingleChildScrollView(
           child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('Tambah Aturan Baru', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)), const SizedBox(height: 24),
+            Text(isEdit ? 'Edit Aturan Otomasi' : 'Tambah Aturan Baru', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)), const SizedBox(height: 24),
             _buildLabel("Pilih Sensor"), DropdownButtonFormField<String>(value: selectedSensor, decoration: _inputDecoration(), items: ['Suhu', 'Kelembaban Tanah', 'Kelembaban Udara', 'Level Air', 'CO2'].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(), onChanged: (val) => selectedSensor = val!), const SizedBox(height: 16),
             _buildLabel("Batas Atas (Target Hidup)"), TextField(controller: nilaiController, keyboardType: TextInputType.number, decoration: _inputDecoration(hint: "Contoh: 32")), const SizedBox(height: 16),
             _buildLabel("Batas Bawah (Toleransi Mati) - Opsional"), TextField(controller: batasBawahController, keyboardType: TextInputType.number, decoration: _inputDecoration(hint: "Contoh: 28")), const SizedBox(height: 16),
             _buildLabel("Pilih Aktuator"), DropdownButtonFormField<String>(value: selectedAktuator, decoration: _inputDecoration(), items: ['Kipas', 'Pompa'].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(), onChanged: (val) => selectedAktuator = val!), const SizedBox(height: 16),
             _buildLabel("Perintah Awal"), DropdownButtonFormField<String>(value: selectedPerintah, decoration: _inputDecoration(), items: ['ON', 'OFF'].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(), onChanged: (val) => selectedPerintah = val!), const SizedBox(height: 32),
-            SizedBox(width: double.infinity, child: ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF163832), padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))), onPressed: () async { if (nilaiController.text.isEmpty) return; final Map<String, dynamic> newData = { 'sensor': selectedSensor, 'operator': selectedOperator, 'nilai': double.parse(nilaiController.text), 'batas_bawah': batasBawahController.text.isEmpty ? null : double.parse(batasBawahController.text), 'aktuator': selectedAktuator, 'perintah': selectedPerintah, 'is_active': true, }; await prov.addTrigger(newData); if (mounted) Navigator.pop(context); }, child: const Text('Simpan Aturan', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)))), const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity, 
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF163832), padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))), 
+                onPressed: () async { 
+                  if (nilaiController.text.isEmpty) return; 
+                  
+                  final Map<String, dynamic> newData = { 
+                    'sensor': selectedSensor, 
+                    'operator': selectedOperator, 
+                    'nilai': double.parse(nilaiController.text), 
+                    'batas_bawah': batasBawahController.text.isEmpty ? null : double.parse(batasBawahController.text), 
+                    'aktuator': selectedAktuator, 
+                    'perintah': selectedPerintah, 
+                    'is_active': isEdit ? existingItem['is_active'] : true, // Pertahankan status aktif jika edit
+                  }; 
+                  
+                  // JIKA EDIT MAKA UPDATE, JIKA BARU MAKA ADD
+                  if (isEdit) {
+                    await prov.updateTrigger(existingItem['id'], newData);
+                  } else {
+                    await prov.addTrigger(newData); 
+                  }
+                  
+                  if (mounted) Navigator.pop(context); 
+                }, 
+                child: Text(isEdit ? 'Simpan Perubahan' : 'Simpan Aturan', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold))
+              )
+            ), const SizedBox(height: 24),
           ]),
         ),
       ),
@@ -462,6 +547,9 @@ class _OtomasiScreenState extends State<OtomasiScreen> with SingleTickerProvider
     );
   }
 
+  
+
   Widget _buildLabel(String text) => Padding(padding: const EdgeInsets.only(bottom: 8), child: Text(text, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)));
+  
   InputDecoration _inputDecoration({String? hint}) => InputDecoration(hintText: hint, filled: true, fillColor: Colors.grey[100], border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none), contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12));
 }
