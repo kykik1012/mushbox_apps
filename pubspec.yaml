@@ -44,6 +44,7 @@ dependencies:
   fl_chart: ^1.2.0
   intl: ^0.20.2
   flutter_local_notifications: ^21.0.0
+  flutter_launcher_icons: "^0.13.1"
 
 dev_dependencies:
   flutter_test:
@@ -100,5 +101,13 @@ flutter:
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
 # Tambahkan ini di bagian bawah pubspec.yaml
+# Tambahkan blok ini untuk mengatur logo
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "assets/images/logo_mushbox.png" # Pastikan nama file dan foldernya sesuai
+  min_sdk_android: 21
+
 dependency_overrides:
   web: ^0.5.1 # Turunkan versinya agar kompatibel dengan SDK lama
+

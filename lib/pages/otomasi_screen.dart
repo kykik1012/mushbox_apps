@@ -190,7 +190,38 @@ class _OtomasiScreenState extends State<OtomasiScreen> with SingleTickerProvider
                 children: [
                   CircleAvatar(backgroundColor: isActive ? const Color(0xFFE8F0ED) : Colors.grey[200], radius: 16, child: Icon(Icons.bolt, color: isActive ? const Color(0xFF163832) : Colors.grey, size: 18)),
                   const SizedBox(width: 12),
-                  Switch(value: isActive, activeColor: const Color(0xFF163832), onChanged: (val) => prov.toggleTrigger(item['id'], isActive)),
+                  // ==============================================
+                  // SAKLAR OTOMASI DENGAN FITUR PAKSA MATI (INSTANT OFF)
+                  // ==============================================
+                  Switch(
+                    value: isActive, 
+                    activeColor: const Color(0xFF163832), 
+                    onChanged: (val) {
+                      // 1. Ubah status aktif/mati di database (Supabase)
+                      prov.toggleTrigger(item['id'], isActive);
+                      
+                      // 2. JIKA SAKLAR DIMATIKAN, LANGSUNG MATIKAN ALAT FISIKNYA
+                      if (val == false) {
+                        final dashProv = Provider.of<DashboardProvider>(context, listen: false);
+                        
+                        // Cek aktuator apa yang sedang dimatikan otomasinya
+                        if (item['aktuator'] == 'Kipas') {
+                          dashProv.manualToggleKipas(false); // Tembak MQTT Kipas OFF
+                        } else if (item['aktuator'] == 'Pompa') {
+                          dashProv.manualTogglePompa(false); // Tembak MQTT Pompa OFF
+                        }
+                        
+                        // Tampilkan notifikasi kecil agar user tahu alat dimatikan paksa
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('${item['aktuator']} dimatikan karena otomasi dinonaktifkan.'),
+                            backgroundColor: Colors.grey[800],
+                            duration: const Duration(seconds: 2),
+                          ),
+                        );
+                      }
+                    }
+                  ),
                 ],
               ),
               Row(
